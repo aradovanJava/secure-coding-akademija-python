@@ -34,6 +34,8 @@ markers = [
 [tool.ruff]
 line-length = 120
 target-version = "py312"
+# Isječci koda u uputama (docs/*.md) namjerno nisu formatirani kao samostalni moduli.
+extend-exclude = ["docs"]
 
 [tool.ruff.lint]
 # S = pravila iz Bandita (flake8-bandit) – sigurnosna statička analiza u IDE-u i CI-u.

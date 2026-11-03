@@ -26,8 +26,10 @@ PASSWORDS = {"ana": "Ana123!", "marko": "Marko123!", "admin": "Admin123!"}
 
 
 @pytest.fixture(scope="session")
-def app() -> FastAPI:
-    return create_app()
+def app() -> Iterator[FastAPI]:
+    application = create_app()
+    yield application
+    application.state.db.close()
 
 
 @pytest.fixture(scope="session")
@@ -83,7 +85,8 @@ class LiveServer:
 @pytest.fixture(scope="session")
 def live_server() -> Iterator[LiveServer]:
     port = _free_port()
-    config = uvicorn.Config(create_app(), host="127.0.0.1", port=port, log_level="warning")
+    application = create_app()
+    config = uvicorn.Config(application, host="127.0.0.1", port=port, log_level="warning")
     server = uvicorn.Server(config)
     thread = threading.Thread(target=server.run, daemon=True)
     thread.start()
@@ -95,3 +98,4 @@ def live_server() -> Iterator[LiveServer]:
     yield LiveServer(f"http://127.0.0.1:{port}", port)
     server.should_exit = True
     thread.join(timeout=10)
+    application.state.db.close()

@@ -56,6 +56,10 @@ class Database:
         rows = self.query(sql, params)
         return rows[0] if rows else None
 
+    def close(self) -> None:
+        with self._lock:
+            self._conn.close()
+
     @contextmanager
     def transaction(self) -> Iterator[Database]:
         """Sve naredbe unutar bloka ``with`` izvršavaju se kao jedna transakcija.
