@@ -90,6 +90,8 @@ poslužitelj bi mogao preusmjeriti na `127.0.0.1`).
 
 ```python
 ALLOWED_SCHEMES = {"http", "https"}
+# Po želji: allowlista domena (prazan skup = provjeravaju se samo adrese).
+ALLOWED_DOMAINS: set[str] = set()
 
 
 def is_forbidden_address(address: str) -> bool:
@@ -109,10 +111,14 @@ def validate_url(url: str) -> None:
     host = parts.hostname
     if not host:
         raise UnsafeUrlError("URL nema host.")
-    # ... (po želji allowlista domena) ...
-    port = parts.port or (443 if parts.scheme.lower() == "https" else 80)
-    addresses = {info[4][0] for info in socket.getaddrinfo(host, port, proto=socket.IPPROTO_TCP)}
-    if not addresses or any(is_forbidden_address(a) for a in addresses):
+    if ALLOWED_DOMAINS and host.lower() not in ALLOWED_DOMAINS:
+        raise UnsafeUrlError("Domena nije na popisu dopuštenih.")
+    try:
+        port = parts.port or (443 if parts.scheme.lower() == "https" else 80)
+        addresses = {info[4][0] for info in socket.getaddrinfo(host, port, proto=socket.IPPROTO_TCP)}
+    except (OSError, ValueError) as exc:
+        raise UnsafeUrlError("Host nije moguće razriješiti.") from exc
+    if not addresses or any(is_forbidden_address(address) for address in addresses):
         raise UnsafeUrlError("Odredište nije dopušteno (interna ili posebna adresa).")
 
 
