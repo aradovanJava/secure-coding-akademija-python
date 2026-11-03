@@ -75,7 +75,9 @@ def main() -> int:
             status += f" | FUNKC. PAD ({fun['failed']}/{fun['total']})"
         lines.append(f"{lab}: {status}")
 
-    title = ("Lab sazetak (rjesenja)" if is_solution else "Lab sazetak (main)") + (f" {args.label}" if args.label else "")
+    title = "Lab sazetak (rjesenja)" if is_solution else "Lab sazetak (main)"
+    if args.label:
+        title += f" {args.label}"
     print(f"::notice title={title}::" + "%0A".join(lines), flush=True)
 
     print(f"\n===== SAŽETAK PO VJEŽBI ({args.branch or '?'}) {args.label} =====")
