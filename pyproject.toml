@@ -1,0 +1,46 @@
+[project]
+name = "vulnshop-akademija"
+version = "1.0.0"
+description = "VulnShop Akademija – namjerno ranjiva web trgovina za vježbe sigurnog programiranja (Span CKS)"
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [{ name = "Aleksander Radovan" }]
+# Ovisnosti su zaključane u requirements.txt i requirements-dev.txt (vidi Lab05 – lanac opskrbe).
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-ra --strict-markers"
+markers = [
+  "security: sigurnosni testovi (na grani main PADAJU, na grani rjesenja PROLAZE)",
+  "functional: funkcionalni testovi (prolaze uvijek)",
+  "lab01: Lab01 – IDOR",
+  "lab02: Lab02 – mass assignment",
+  "lab03: Lab03 – SSRF",
+  "lab04: Lab04 – sigurnosna konfiguracija",
+  "lab05: Lab05 – lanac opskrbe (ranjiva ovisnost)",
+  "lab06: Lab06 – kriptografski propusti",
+  "lab07: Lab07 – SQL injection",
+  "lab08: Lab08 – XSS",
+  "lab09: Lab09 – OS command injection",
+  "lab10: Lab10 – nesiguran dizajn (poslovna logika)",
+  "lab11: Lab11 – brute force i enumeracija",
+  "lab12: Lab12 – JWT propusti",
+  "lab13: Lab13 – nesigurna deserijalizacija",
+  "lab14: Lab14 – sigurnosno bilježenje",
+  "lab15: Lab15 – rukovanje iznimkama",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+# S = pravila iz Bandita (flake8-bandit) – sigurnosna statička analiza u IDE-u i CI-u.
+select = ["E", "F", "I", "B", "S"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S105", "S106", "S108", "S301", "S310", "S603", "S607"]
+
+[tool.bandit]
+exclude_dirs = ["tests", ".venv", "venv"]

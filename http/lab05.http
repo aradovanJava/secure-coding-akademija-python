@@ -1,0 +1,28 @@
+### Lab05 – Software Supply Chain (ranjiva jinja2 3.1.4 + template injection)
+@host = http://localhost:8000
+
+### 1. Obican pozdrav (radi uvijek)
+POST {{host}}/api/lab05/greeting
+Content-Type: application/json
+
+{"name": "Ana"}
+
+### 2. EKSPLOATACIJA: izraz predloska se izvrsava na posluzitelju
+# Ranjivo (main): "Pozdrav, 49!". Popravljeno: doslovni tekst "Pozdrav, {{ 7*7 }}!".
+POST {{host}}/api/lab05/greeting
+Content-Type: application/json
+
+{"name": "{{ 7*7 }}"}
+
+### 3. EKSPLOATACIJA: izvrsavanje funkcija i filtara predloska
+POST {{host}}/api/lab05/greeting
+Content-Type: application/json
+
+{"name": "{{ range(5)|list }} {{ 'abc'|upper }}"}
+
+### 4. Sandbox blokira izravan pristup internim atributima...
+# ...ali ranjiva verzija 3.1.4 ima poznate nacine bijega iz sandboxa (CVE-2024-56326, CVE-2025-27516).
+POST {{host}}/api/lab05/greeting
+Content-Type: application/json
+
+{"name": "{{ ''.__class__ }}"}

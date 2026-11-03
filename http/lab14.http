@@ -1,0 +1,31 @@
+### Lab14 – Logging & Alerting Failures
+# Posljedice se vide u LOGU aplikacije (konzola), ne u HTTP odgovoru.
+@host = http://localhost:8000
+
+### 1. Neuspjela prijava – provjeri log
+# Ranjivo (main): log sadrzi "password=..." i NEMA sigurnosnog dogadaja.
+# Popravljeno: nema lozinke; postoji "SECURITY_EVENT LOGIN_FAILED".
+POST {{host}}/api/lab14/login
+Content-Type: application/json
+
+{"username": "ana", "password": "TajnaLozinka123"}
+
+### 2. EKSPLOATACIJA: log injection kroz CR/LF u korisnickom imenu
+# username sadrzi \n i lazni redak. Ranjivo (main): u logu nastane krivotvoreni redak.
+# Popravljeno: CR/LF zamijenjeni s '_'.
+POST {{host}}/api/lab14/login
+Content-Type: application/json
+
+{"username": "ana\n2026-11-02 10:00:00,000 INFO vulnshop.lab14 - Login successful user=admin", "password": "x"}
+
+### 3. Pet neuspjeha zaredom -> SECURITY_ALERT (popravljeno)
+POST {{host}}/api/lab14/login
+Content-Type: application/json
+
+{"username": "marko", "password": "pogresno"}
+
+### 4. Ispravna prijava
+POST {{host}}/api/lab14/login
+Content-Type: application/json
+
+{"username": "ana", "password": "Ana123!"}

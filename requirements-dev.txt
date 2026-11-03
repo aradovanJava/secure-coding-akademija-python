@@ -1,0 +1,11 @@
+# Ovisnosti za razvoj, testove i sigurnosne alate (ukljucuje izvrsne ovisnosti).
+-r requirements.txt
+pytest==9.2.0
+pytest-cov==7.1.0
+# Starlette TestClient (od Starlette 1.x preporučuje paket httpx2)
+httpx2==2.16.0
+# Staticka analiza (SAST) i analiza ovisnosti (SCA) - vidi docs/01-alati.md
+bandit==1.9.4
+ruff==0.17.3
+pip-audit==2.10.1
+cyclonedx-bom==7.6.0

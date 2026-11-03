@@ -1,0 +1,29 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "VulnShop (uvicorn, port 8000)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "vulnshop",
+      "cwd": "${workspaceFolder}",
+      "justMyCode": true
+    },
+    {
+      "name": "VulnShop (rjesenja: produkcijski nacin, APP_DEBUG=false)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "vulnshop",
+      "cwd": "${workspaceFolder}",
+      "env": { "APP_DEBUG": "false" },
+      "justMyCode": true
+    },
+    {
+      "name": "Lab13: ispisi payload (Base64)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "tests.lab13.payloads",
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}

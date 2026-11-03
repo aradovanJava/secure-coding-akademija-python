@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  testovi:
+    name: Testovi (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.14"]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Postavi Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: requirements*.txt
+
+      - name: Instaliraj ovisnosti
+        run: pip install -r requirements-dev.txt
+
+      - name: Provjera uvoza aplikacije
+        run: python -c "from vulnshop.app import create_app; create_app(); print('Aplikacija se pokreće.')"
+
+      - name: Funkcionalni testovi
+        id: functional
+        continue-on-error: true
+        run: |
+          mkdir -p reports
+          python -m pytest -m functional --junitxml=reports/functional.xml -o junit_family=xunit2
+
+      - name: Sigurnosni testovi
+        id: security
+        continue-on-error: ${{ github.ref_name != 'rjesenja' }}
+        run: python -m pytest -m security --junitxml=reports/security.xml -o junit_family=xunit2
+
+      - name: Sažetak po vježbi (anotacije)
+        if: always()
+        run: |
+          python scripts/ci_summary.py --branch "${GITHUB_REF_NAME}" \
+            --functional reports/functional.xml --security reports/security.xml \
+            --label "py${{ matrix.python-version }}"
+
+  sigurnosni-alati:
+    name: Sigurnosni alati (informativno)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: requirements*.txt
+      - run: pip install -r requirements-dev.txt
+
+      - name: SAST – Bandit
+        run: bandit -c pyproject.toml -r vulnshop || true
+
+      - name: SAST – Ruff (pravila S)
+        run: ruff check vulnshop --select S --output-format github || true
+
+      - name: SCA – pip-audit
+        run: pip-audit -r requirements.txt || true
+
+      - name: SBOM – CycloneDX
+        run: |
+          cyclonedx-py requirements requirements.txt -o sbom.cdx.json
+          echo "SBOM ima $(python -c "import json;print(len(json.load(open('sbom.cdx.json'))['components']))") komponenti."
+
+      - name: Spremi SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom.cdx.json

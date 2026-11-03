@@ -1,0 +1,37 @@
+### Lab15 – Mishandling of Exceptional Conditions
+@host = http://localhost:8000
+@token = PASTE_TOKEN
+
+### 1. Prijava (kopiraj token u @token)
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{"username": "ana", "password": "Ana123!"}
+
+### 2. Racuni korisnika
+GET {{host}}/api/lab15/accounts
+Authorization: Bearer {{token}}
+
+### 3. EKSPLOATACIJA (fail-open): transfer 50000 s nepoznatom valutom XYZ
+# Ranjivo (main): prolazi mimo limita (iznimka u provjeri se proguta). Popravljeno: 400, saldo nepromijenjen.
+POST {{host}}/api/lab15/transfer
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"fromAccount": "HR-ANA-001", "toAccount": "HR-MARKO-001", "amount": "50000.00", "currency": "XYZ"}
+
+### 4. EKSPLOATACIJA (nema transakcije): transfer na nepostojeci racun
+# Ranjivo (main): terecenje prode, odobrenje padne -> novac nestane; poruka otkriva detalje.
+# Popravljeno: 400, saldo nepromijenjen, genericka poruka s correlationId.
+POST {{host}}/api/lab15/transfer
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"fromAccount": "HR-ANA-001", "toAccount": "HR-NEPOSTOJI-999", "amount": "100.00", "currency": "EUR"}
+
+### 5. Legitiman transfer 100 EUR -> 200, saldo -100
+POST {{host}}/api/lab15/transfer
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"fromAccount": "HR-ANA-001", "toAccount": "HR-MARKO-001", "amount": "100.00", "currency": "EUR"}

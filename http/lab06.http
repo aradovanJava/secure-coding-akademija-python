@@ -1,0 +1,38 @@
+### Lab06 – Cryptographic Failures (MD5 lozinke + AES/ECB kartice)
+@host = http://localhost:8000
+
+### 1. Registracija kupca
+POST {{host}}/api/lab06/register
+Content-Type: application/json
+
+{"username": "testko", "password": "Lozinka123!"}
+
+### 2. Prijava kupca
+POST {{host}}/api/lab06/login
+Content-Type: application/json
+
+{"username": "testko", "password": "Lozinka123!"}
+
+### 3. EKSPLOATACIJA: procurjeli "dump" lozinki (bez autentikacije)
+# Ranjivo (main): MD5 heksevi; ivan i maja (ista lozinka 123456) imaju ISTI hash.
+# Hasheve ubaci u CrackStation ili: hashcat -m 0 hashes.txt wordlists/top-100.txt
+GET {{host}}/api/lab06/customers/export
+
+### 4. EKSPLOATACIJA (ECB): isti broj kartice -> isti ciphertext
+POST {{host}}/api/lab06/cards
+Content-Type: application/json
+
+{"cardNumber": "4111111111111111"}
+
+### 5. Ponovi isti broj – usporedi ciphertext s korakom 4
+# Ranjivo (main): identican ciphertext (ECB). Popravljeno: razlicit (AES-GCM, nasumicni IV).
+POST {{host}}/api/lab06/cards
+Content-Type: application/json
+
+{"cardNumber": "4111111111111111"}
+
+### 6. Popis sifriranih kartica
+GET {{host}}/api/lab06/cards
+
+### 7. Maskirani prikaz (zamijeni 1 stvarnim id-om)
+GET {{host}}/api/lab06/cards/1/masked

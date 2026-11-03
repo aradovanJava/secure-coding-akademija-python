@@ -1,0 +1,18 @@
+### Lab13 – Nesigurna deserijalizacija (pickle)
+# Base64 sadrzaj generira pomocni alat. Iz korijena repozitorija pokreni:
+#     python -m tests.lab13.payloads
+# (ili u VS Codeu konfiguraciju "Lab13: ispisi payload") i kopiraj ispisane nizove u zahtjeve ispod.
+@host = http://localhost:8000
+
+### 1. Legitimna kosarica (2 stavke) -> itemCount=2
+POST {{host}}/api/lab13/cart/import
+Content-Type: text/plain
+
+PASTE_LEGIT_BASE64_PAYLOAD
+
+### 2. EKSPLOATACIJA: DiagnosticsTask gadget (zapisuje marker datoteku lab13-pwned.txt u TEMP direktorij)
+# Ranjivo (main): 200 {"type": "DiagnosticsTask"} i datoteka nastane. Popravljeno: 400 i datoteka NE nastane.
+POST {{host}}/api/lab13/cart/import
+Content-Type: text/plain
+
+PASTE_ATTACK_BASE64_PAYLOAD

