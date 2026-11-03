@@ -29,7 +29,7 @@ HOSTNAME_PATTERN = re.compile(r"^(?!-)[A-Za-z0-9.-]{1,253}$")
 def is_valid_host(host: str) -> bool:
     try:
         ipaddress.ip_address(host)
-        return True
+        return "%" not in host  # bez IPv6 "zone" sufiksa (npr. fe80::1%eth0) - on dopušta proizvoljan tekst
     except ValueError:
         return bool(HOSTNAME_PATTERN.fullmatch(host))
 
