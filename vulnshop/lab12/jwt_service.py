@@ -1,12 +1,15 @@
-"""Lab12 – ručna implementacija JWT-a (HS256) bez vanjskih biblioteka.
+"""Lab12 – ručna implementacija JWT-a (HS256) bez vanjskih biblioteka – ISPRAVLJENO.
 
-RANJIVA verifikacija (``verify``):
+POPRAVAK verifikacije (``verify``):
 
-* čita ``alg`` iz zaglavlja tokena – ako je ``none``, preskače provjeru potpisa,
-* ne provjerava ``exp`` (istekli token prolazi),
-* potpis uspoređuje operatorom ``==`` (vrijeme usporedbe ovisi o sadržaju).
+* allowlista algoritma – prihvaća se SAMO ``HS256`` (``none`` i ostalo se odbija),
+* potpis se uspoređuje u konstantnom vremenu (``hmac.compare_digest``),
+* provjerava se ``exp`` (istekli token se odbija),
+* tajna je jaka (256 bita) i dolazi iz okoline ``LAB12_JWT_SECRET`` (vidi config.py).
 
-Tajna je slaba i hardkodirana (``secret123``, vidi config.py).
+U stvarnim projektima koristite provjerenu biblioteku (PyJWT, joserfc, Authlib) i eksplicitno
+zadajte dopuštene algoritme, npr. ``jwt.decode(token, key, algorithms=["HS256"])``, te po
+potrebi provjeru ``iss`` i ``aud``.
 """
 
 from __future__ import annotations
@@ -16,6 +19,8 @@ import hashlib
 import hmac
 import json
 from datetime import UTC, datetime
+
+ALLOWED_ALGORITHM = "HS256"
 
 
 def b64url_encode(data: bytes) -> str:
@@ -36,7 +41,7 @@ class JwtService:
 
     def create_token(self, username: str, role: str, expires_at: datetime) -> str:
         """Izrađuje HS256 token s proizvoljnim vremenom isteka (korisno i za testove)."""
-        header = {"alg": "HS256", "typ": "JWT"}
+        header = {"alg": ALLOWED_ALGORITHM, "typ": "JWT"}
         payload = {
             "sub": username,
             "role": role,
@@ -52,24 +57,26 @@ class JwtService:
         return signing_input + "." + signature
 
     def verify(self, token: str) -> dict | None:
-        """RANJIVO: vraća claimove (sub, role ...) ili None ako token nije valjan."""
+        """Vraća claimove (sub, role ...) ili None ako token nije valjan."""
         try:
             parts = token.split(".")
-            if len(parts) < 2:
+            if len(parts) != 3:
                 return None
             header = json.loads(b64url_decode(parts[0]))
             payload = json.loads(b64url_decode(parts[1]))
             if not isinstance(header, dict) or not isinstance(payload, dict):
                 return None
-            # RANJIVO: algoritam određuje napadač – "none" preskače provjeru potpisa.
-            if str(header.get("alg", "")).lower() != "none":
-                if len(parts) != 3:
-                    return None
-                expected = b64url_encode(hmac_sha256(parts[0] + "." + parts[1], self._secret))
-                # RANJIVO: obična usporedba stringova (nije u konstantnom vremenu).
-                if expected != parts[2]:
-                    return None
-            # RANJIVO: exp se ne provjerava.
+            # POPRAVAK: algoritam određuje POSLUŽITELJ (allowlista), a ne zaglavlje tokena.
+            if header.get("alg") != ALLOWED_ALGORITHM:
+                return None
+            expected = b64url_encode(hmac_sha256(parts[0] + "." + parts[1], self._secret))
+            # POPRAVAK: usporedba u konstantnom vremenu.
+            if not hmac.compare_digest(expected.encode("ascii"), parts[2].encode("ascii")):
+                return None
+            # POPRAVAK: provjera isteka (exp je obavezan).
+            exp = payload.get("exp")
+            if not isinstance(exp, int | float) or exp <= datetime.now(UTC).timestamp():
+                return None
             return payload
-        except (ValueError, UnicodeDecodeError, AttributeError):
+        except (ValueError, UnicodeDecodeError, UnicodeEncodeError, AttributeError):
             return None

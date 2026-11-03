@@ -1,12 +1,12 @@
-"""Lab02 – A01 Broken Access Control: mass assignment / eskalacija privilegija (CWE-915, CWE-269).
+"""Lab02 – A01 Broken Access Control: mass assignment / eskalacija privilegija (CWE-915, CWE-269) – ISPRAVLJENO.
 
-RANJIVO: ``PUT /api/lab02/profile`` prima model koji sadrži i polje ``role`` te ga zapisuje u
-bazu. Korisnik tako sam sebi može postaviti ulogu ADMIN (mass assignment) i dobiti pristup
-administratorskom endpointu ``GET /api/lab02/admin/users``.
+POPRAVAK: ``PUT /api/lab02/profile`` prima DTO koji sadrži SAMO polja koja korisnik smije
+mijenjati (displayName, email) uz validaciju. Nepoznata polja (npr. ``role``) se ignoriraju, a
+uloga se mijenja isključivo kroz administratorski proces.
 """
 
 from fastapi import APIRouter
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from vulnshop.common.auth import CurrentUserDep, DbDep
 from vulnshop.common.db import Database
@@ -16,11 +16,12 @@ router = APIRouter(tags=["Lab02 – Mass assignment"])
 
 
 class ProfileUpdate(BaseModel):
-    """RANJIVO: model prihvaća i polje role iz tijela zahtjeva."""
+    """POPRAVAK: DTO samo s poljima koja korisnik smije mijenjati (bez role) + validacija."""
 
-    display_name: str | None = Field(default=None, alias="displayName")
-    email: str | None = None
-    role: str | None = None
+    model_config = ConfigDict(extra="ignore")  # nepoznata polja (npr. "role") se odbacuju
+
+    display_name: str = Field(alias="displayName", min_length=1, max_length=100)
+    email: str = Field(max_length=200, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
 @router.get("/api/lab02/profile")
@@ -30,13 +31,10 @@ def get_profile(user: CurrentUserDep, db: DbDep):
 
 @router.put("/api/lab02/profile")
 def update_profile(update: ProfileUpdate, user: CurrentUserDep, db: DbDep):
-    # RANJIVO: role dolazi izravno iz JSON-a i zapisuje se bez provjere (mass assignment).
-    # Legitimni klijent ne šalje role (COALESCE zadržava postojeću vrijednost), ali napadač
-    # može poslati "role": "ADMIN" i tako eskalirati privilegije.
+    # POPRAVAK: zapisuju se samo dopuštena polja; uloga se ovdje ne može promijeniti.
     db.execute(
-        "UPDATE lab02_profiles SET display_name = COALESCE(?, display_name), email = COALESCE(?, email), "
-        "role = COALESCE(?, role) WHERE user_id = ?",
-        (update.display_name, update.email, update.role, user.id),
+        "UPDATE lab02_profiles SET display_name = ?, email = ? WHERE user_id = ?",
+        (update.display_name, update.email, user.id),
     )
     return to_dto(load_profile(db, user.id))
 

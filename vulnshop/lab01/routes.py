@@ -1,8 +1,7 @@
-"""Lab01 – A01 Broken Access Control: IDOR (CWE-639).
+"""Lab01 – A01 Broken Access Control: IDOR (CWE-639) – ISPRAVLJENO.
 
-RANJIVO: endpoint vraća narudžbu isključivo prema identifikatoru iz URL-a i ne provjerava
-pripada li narudžba prijavljenom korisniku. Identifikatori su redni brojevi, pa prijavljeni
-korisnik jednostavno mijenja broj u URL-u i čita tuđe narudžbe.
+POPRAVAK: nakon dohvata narudžbe provjerava se vlasništvo. Ako narudžba nije korisnikova, a
+korisnik nije ADMIN, vraća se 404 (ne 403) – tako ne otkrivamo ni postojanje tuđe narudžbe.
 """
 
 from fastapi import APIRouter
@@ -20,9 +19,10 @@ def get_order(order_id: int, user: CurrentUserDep, db: DbDep):
         "SELECT id, owner_username, items, shipping_address, total FROM lab01_orders WHERE id = ?",
         (order_id,),
     )
-    if row is None:
+    # POPRAVAK: provjera vlasništva. Tuđa narudžba izgleda isto kao nepostojeća (404),
+    # osim za administratora koji smije vidjeti sve narudžbe.
+    if row is None or (row["owner_username"] != user.username and not user.is_admin):
         return error(404, "Narudžba nije pronađena.")
-    # RANJIVO: ne provjerava se je li prijavljeni korisnik vlasnik narudžbe niti je li ADMIN.
     return to_dto(row)
 
 

@@ -1,12 +1,13 @@
 """Konfiguracija aplikacije (analogno datoteci application.properties u Java verziji).
 
 Vrijednosti se čitaju iz varijabli okoline, uz zadane vrijednosti za lokalni rad.
-Na grani ``main`` dio postavki je NAMJERNO RANJIV (Lab04, Lab12) – vidi komentare.
+Grana ``rjesenja``: postavke za Lab04 i Lab12 su ISPRAVLJENE – vidi komentare POPRAVAK.
 """
 
 from __future__ import annotations
 
 import os
+import secrets
 from dataclasses import dataclass, field
 
 
@@ -27,12 +28,11 @@ def _env_list(name: str, default: list[str]) -> list[str]:
 @dataclass(frozen=True)
 class Settings:
     # ---------------------------------------------------------------------------
-    # Lab04 – A02 Security Misconfiguration (NAMJERNO RANJIVO na grani main)
+    # Lab04 – A02 Security Misconfiguration (ISPRAVLJENO)
     # ---------------------------------------------------------------------------
-    # RANJIVO: debug način rada uključen je po zadanom – i u "produkciji".
-    # FastAPI/Starlette tada za svaku neobrađenu iznimku vraća cijeli traceback
-    # (putanje datoteka, nazive modula i klasa, dijelove koda).
-    debug: bool = field(default_factory=lambda: _env_bool("APP_DEBUG", True))
+    # POPRAVAK: debug je po zadanom ISKLJUČEN ("secure by default"); uključuje se samo
+    # svjesno, za lokalni razvoj (APP_DEBUG=true).
+    debug: bool = field(default_factory=lambda: _env_bool("APP_DEBUG", False))
 
     # Dopušteni CORS origini (koristi ih tek ispravljena konfiguracija u lab04/security_config.py).
     cors_allowed_origins: list[str] = field(
@@ -48,5 +48,9 @@ class Settings:
         default_factory=lambda: os.environ.get("LAB06_KEY", "ZGV2LWtsanVjLVNBTU8temEtbG9rYWxuaS1yYWQhMzI=")
     )
 
-    # Lab12 – RANJIVO: slaba i hardkodirana JWT tajna.
-    lab12_jwt_secret: str = "secret123"
+    # Lab12 – POPRAVAK: jaka tajna (256 bita) iz okoline LAB12_JWT_SECRET. Ako nije zadana,
+    # za lokalni rad generira se nasumična tajna pri svakom pokretanju (tokeni tada ne
+    # preživljavaju ponovno pokretanje – što je za razvoj prihvatljivo).
+    lab12_jwt_secret: str = field(
+        default_factory=lambda: os.environ.get("LAB12_JWT_SECRET") or secrets.token_urlsafe(32)
+    )
